@@ -1,0 +1,95 @@
+{
+  "apiVersion": 1,
+  "groups": [
+    {
+      "orgId": 1,
+      "name": "5m Evaluation Group",
+      "folder": "Golang Services",
+      "interval": "5m",
+      "rules": [
+        {
+          "uid": "be2iq64maek8we",
+          "title": "High Error Rate on Logins (>5%)",
+          "condition": "C",
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "datasourceUid": "fe2ihlqncskqoa",
+              "model": {
+                "editorMode": "code",
+                "expr": "sum(rate(http_errors_total[5m])) / sum(rate(http_requests_total[5m])) * 100",
+                "instant": true,
+                "intervalMs": 1000,
+                "legendFormat": "__auto",
+                "maxDataPoints": 43200,
+                "range": false,
+                "refId": "A"
+              }
+            },
+            {
+              "refId": "C",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "datasourceUid": "__expr__",
+              "model": {
+                "conditions": [
+                  {
+                    "evaluator": {
+                      "params": [
+                        5
+                      ],
+                      "type": "gt"
+                    },
+                    "operator": {
+                      "type": "and"
+                    },
+                    "query": {
+                      "params": [
+                        "C"
+                      ]
+                    },
+                    "reducer": {
+                      "params": [],
+                      "type": "last"
+                    },
+                    "type": "query"
+                  }
+                ],
+                "datasource": {
+                  "type": "__expr__",
+                  "uid": "__expr__"
+                },
+                "expression": "A",
+                "intervalMs": 1000,
+                "maxDataPoints": 43200,
+                "refId": "C",
+                "type": "threshold"
+              }
+            }
+          ],
+          "noDataState": "NoData",
+          "execErrState": "Error",
+          "for": "5m",
+          "annotations": {
+            "description": "Severity: Critical\nError Rate: Over 5%\nInterval: Pst 5 minutes\nAffected Endpoints: POST /login\nDashboard: https://localhost:3000/\nRunbook: https://runbook/http-errors",
+            "runbook_url": "https://sreengineer.dev/runbook-template/",
+            "summary": "Error Rate was over 5% over the past 5 minutes.\nInvestigate immediately."
+          },
+          "labels": {
+            "context": "auth"
+          },
+          "isPaused": false,
+          "notification_settings": {
+            "receiver": "grafana-default-email"
+          }
+        }
+      ]
+    }
+  ]
+}
