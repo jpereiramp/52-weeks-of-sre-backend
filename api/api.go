@@ -2,6 +2,8 @@
 package api
 
 import (
+	"github.com/jpereiramp/52-weeks-of-sre-backend/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"os"
 	"path"
@@ -60,6 +62,7 @@ func New(enableCORS bool) (*chi.Mux, error) {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Timeout(15 * time.Second))
+	r.Use(metrics.Middleware)
 
 	r.Use(logging.NewStructuredLogger(logger))
 	r.Use(render.SetContentType(render.ContentTypeJSON))
@@ -80,6 +83,8 @@ func New(enableCORS bool) (*chi.Mux, error) {
 	r.Get("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte("pong"))
 	})
+
+	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 
 	r.Get("/*", SPAHandler("public"))
 

@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"errors"
+	"github.com/jpereiramp/52-weeks-of-sre-backend/metrics"
 	"net/http"
 	"strconv"
 
@@ -131,6 +132,7 @@ func (rs *AccountResource) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	metrics.SignupsTotal.WithLabelValues().Inc()
 	render.Respond(w, r, newAccountResponse(data.Account))
 }
 
