@@ -1,0 +1,30 @@
+version: "prometheus/v1"
+service: "go-service"
+labels:
+  owner: "my_team"
+  repo: "jpereiramp/52-weeks-of-sre-backend"
+  tier: "1" # Defines the priority (a lower value means a higher priority)
+slos:
+  # We allow failing (5xx and 429) 1 request every 1000 requests (99.9%).
+  - name: "requests-availability"
+    objective: 99.9
+    description: "Common SLO based on availability for HTTP request responses."
+    sli:
+      events:
+        error_query: sum(rate(http_requests_total{handler="/auth/login"}[{{.window}}]))
+        total_query: sum(rate(http_errors_total{handler="/auth/login", status=~"5.*"}[{{.window}}]))
+    alerting:
+      name: LoginsHighErrorRate
+      labels:
+        category: "availability"
+      annotations:
+        # Overwrite default Sloth SLO alert summmary on ticket and page alerts.
+        summary: "High error rate at 'go-service' login requests"
+      page_alert:
+        labels:
+          severity: page_team
+          routing_key: my_team
+      ticket_alert:
+        labels:
+          severity: "discord"
+          slack_channel: "#alerts-my-team"

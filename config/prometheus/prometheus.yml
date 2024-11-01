@@ -1,6 +1,9 @@
 global:
   scrape_interval: 15s
 
+rule_files:
+  - "login_slo_rules.yaml" # Add our Login SLO rules file
+
 scrape_configs:
   - job_name: 'go-service'
     static_configs:
