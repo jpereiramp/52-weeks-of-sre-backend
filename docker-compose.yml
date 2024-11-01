@@ -39,6 +39,7 @@ services:
       - "9090:9090" # Exposes Prometheus on port 9090
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus/login_slo_rules.yaml:/etc/prometheus/login_slo_rules.yaml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
 
