@@ -1,12 +1,15 @@
+# OS and Editor Files
 .DS_STORE
 .vscode
 .realize.yaml
 .idea
 
+# Environment Files
 .env
 .env.*
 !.env.example
 
+# Go Files and Binaries
 debug
 go-base
 

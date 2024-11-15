@@ -1,0 +1,4 @@
+---
+# Database Credentials
+db_user: doadmin
+db_password: securedbpassword

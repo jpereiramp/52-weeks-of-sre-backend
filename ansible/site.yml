@@ -1,0 +1,17 @@
+- name: Configure common settings for all servers
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Configure Go application server
+  hosts: app
+  become: true
+  roles:
+    - app
+
+- name: Configure monitoring server
+  hosts: monitoring
+  become: true
+  roles:
+    - monitoring

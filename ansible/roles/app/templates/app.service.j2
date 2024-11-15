@@ -1,0 +1,21 @@
+[Unit]
+Description=Go Application
+After=network.target
+
+[Service]
+Type=simple
+User={{ app_user }}
+Group={{ app_group }}
+WorkingDirectory={{ app_dir }}
+Environment=PATH=/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=GOPATH=/home/{{ app_user }}/go
+{% for key, value in app_env.items() %}
+Environment={{ key }}={{ value }}
+{% endfor %}
+
+ExecStart=/usr/local/go/bin/go run main.go serve
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

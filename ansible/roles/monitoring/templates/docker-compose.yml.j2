@@ -1,0 +1,39 @@
+version: '3.7'
+
+services:
+    prometheus:
+      image: prom/prometheus:latest
+      volumes:
+        - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        - ./prometheus/rules:/etc/prometheus/rules:ro
+        - prometheus_data:/prometheus
+      command:
+        - '--config.file=/etc/prometheus/prometheus.yml'
+        - '--storage.tsdb.retention.time={{ prometheus_retention_time }}'
+        - '--web.enable-lifecycle'
+      ports:
+        - "9090:9090"
+      restart: unless-stopped
+      user: "65534:65534"  # nobody:nogroup
+
+    grafana:
+      image: grafana/grafana:latest
+      volumes:
+        - ./grafana/provisioning:/etc/grafana/provisioning:ro
+        - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+        - grafana_data:/var/lib/grafana
+      environment:
+        - GF_SECURITY_ADMIN_PASSWORD={{ grafana_admin_password }}
+        - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/golden_signals_dashboard.json
+      ports:
+        - "3000:3000"
+      depends_on:
+        - prometheus
+      restart: unless-stopped
+      user: "472:472"  # grafana:grafana
+
+volumes:
+    prometheus_data:
+        driver: local
+    grafana_data:
+        driver: local

@@ -1,0 +1,139 @@
+---
+- name: Install Python dependencies
+  apt:
+    name:
+      - python3-pip
+      - python3-setuptools
+    state: present
+
+- name: Install Docker
+  block:
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+    - name: Install Docker Python package
+      pip:
+        name:
+          - docker==6.1.3
+          - urllib3<2.0
+        state: present
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add users to docker group
+      user:
+        name: "{{ item }}"
+        groups: docker
+        append: yes
+      loop: "{{ docker_users }}"
+  notify: restart docker
+
+- name: Create monitoring directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /opt/monitoring
+    - /opt/monitoring/prometheus
+    - /opt/monitoring/prometheus/rules
+    - /opt/monitoring/grafana
+    - /opt/monitoring/grafana/dashboards
+    - /opt/monitoring/grafana/alerts
+    - /opt/monitoring/grafana/provisioning/dashboards
+    - /opt/monitoring/grafana/provisioning/datasources
+    - /opt/monitoring/grafana/provisioning/alerting
+
+- name: Copy Prometheus rules
+  copy:
+    src: "{{ playbook_dir }}/../config/prometheus/login_slo_rules.yaml"
+    dest: "/opt/monitoring/prometheus/rules/login_slo_rules.yaml"
+    mode: '0644'
+  notify: restart monitoring stack
+
+- name: Configure Prometheus
+  template:
+    src: prometheus.yml.j2
+    dest: /opt/monitoring/prometheus/prometheus.yml
+    mode: '0644'
+  notify: restart monitoring stack
+
+- name: Copy Grafana dashboards
+  copy:
+    src: "{{ playbook_dir }}/../config/grafana/dashboards/"
+    dest: "/opt/monitoring/grafana/dashboards/"
+    mode: '0644'
+
+- name: Copy Grafana alert rules
+  copy:
+    src: "{{ playbook_dir }}/../config/grafana/alerts/login_errors_alert.json"
+    dest: "/opt/monitoring/grafana/provisioning/alerting/rules.json"
+    mode: '0644'
+
+- name: Configure Grafana dashboard provisioning
+  copy:
+    content: |
+      apiVersion: 1
+      providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          allowUiUpdates: true
+          options:
+            path: /var/lib/grafana/dashboards
+    dest: /opt/monitoring/grafana/provisioning/dashboards/default.yaml
+    mode: '0644'
+
+- name: Configure Grafana datasource
+  template:
+    src: datasource.yml.j2
+    dest: /opt/monitoring/grafana/provisioning/datasources/datasource.yml
+    mode: '0644'
+
+- name: Deploy Docker Compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/monitoring/docker-compose.yml
+    mode: '0644'
+
+- name: Ensure Docker socket has correct permissions
+  file:
+    path: /var/run/docker.sock
+    mode: '0666'
+
+- name: Clean existing containers
+  shell: |
+    if [ -f docker-compose.yml ]; then
+      docker compose down -v
+    fi
+  args:
+    chdir: /opt/monitoring
+
+- name: Start monitoring stack
+  command: docker compose up -d
+  args:
+    chdir: /opt/monitoring
+  register: compose_output
+  changed_when: compose_output.stdout != ""
