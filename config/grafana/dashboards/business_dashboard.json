@@ -49,7 +49,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fe2ihlqncskqoa"
+        "uid": "prometheus-default"
       },
       "fieldConfig": {
         "defaults": {

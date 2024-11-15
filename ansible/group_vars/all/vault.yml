@@ -1,0 +1,6 @@
+---
+# SSL Certificates
+ssl_private_key: |
+  -----BEGIN OPENSSH PRIVATE KEY-----
+  YOUR-KEY-HERE
+  -----END OPENSSH PRIVATE KEY-----

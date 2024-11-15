@@ -1,0 +1,6 @@
+---
+# System Configuration
+timezone: UTC
+
+# SSH Configuration
+ssh_port: 22

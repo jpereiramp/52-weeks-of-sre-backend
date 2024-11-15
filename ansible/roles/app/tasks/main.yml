@@ -1,0 +1,88 @@
+- name: Install Go
+  block:
+    - name: Download Go
+      get_url:
+        url: "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz"
+        dest: /tmp/go.tar.gz
+
+    - name: Extract Go
+      unarchive:
+        src: /tmp/go.tar.gz
+        dest: /usr/local
+        remote_src: yes
+
+    - name: Add Go to PATH
+      copy:
+        dest: /etc/profile.d/go.sh
+        content: |
+          export PATH=$PATH:/usr/local/go/bin
+        mode: '0644'
+
+- name: Install git
+  apt:
+    name: git
+    state: present
+
+- name: Create app group
+  group:
+    name: "{{ app_group }}"
+    state: present
+    system: yes
+
+- name: Create app user
+  user:
+    name: "{{ app_user }}"
+    group: "{{ app_group }}"
+    system: yes
+    create_home: yes
+    shell: /bin/bash
+
+- name: Create app directory
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: '0755'
+
+- name: Clone/update application repository
+  git:
+    repo: "https://github.com/jpereiramp/52-weeks-of-sre-backend.git"
+    dest: "{{ app_dir }}"
+    force: yes
+  become: yes
+  become_user: "{{ app_user }}"
+
+- name: Install application dependencies
+  shell: |
+    . /etc/profile.d/go.sh
+    go mod download
+  args:
+    chdir: "{{ app_dir }}"
+  become: yes
+  become_user: "{{ app_user }}"
+
+- name: Run database migrations
+  shell: |
+    . /etc/profile.d/go.sh
+    go run main.go migrate
+  args:
+    chdir: "{{ app_dir }}"
+  become: yes
+  become_user: "{{ app_user }}"
+  environment: "{{ app_env }}"
+  register: migration_output
+
+- name: Create systemd service
+  template:
+    src: app.service.j2
+    dest: /etc/systemd/system/goapp.service
+    mode: '0644'
+  notify: restart goapp
+
+- name: Enable and start goapp service
+  systemd:
+    name: goapp
+    state: started
+    enabled: yes
+    daemon_reload: yes

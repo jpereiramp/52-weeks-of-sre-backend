@@ -1,0 +1,5 @@
+- name: restart monitoring stack
+  community.docker.docker_compose:
+    project_src: /opt/monitoring
+    state: present
+    restarted: yes

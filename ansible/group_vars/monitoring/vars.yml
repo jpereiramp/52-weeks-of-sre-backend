@@ -1,0 +1,3 @@
+prometheus_retention_time: "15d"
+docker_users:
+  - root
